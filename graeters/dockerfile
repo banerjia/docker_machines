@@ -1,0 +1,62 @@
+FROM ubuntu:14.04
+EXPOSE 80
+EXPOSE 22
+ENV DB_USER root
+VOLUME ["/usr/src/app"]
+
+
+RUN apt-get update \
+	&& apt-get -y install wget python-software-properties\
+	&& apt-get update \
+    && apt-get install -y  nodejs npm build-essential libreadline-dev \
+    && apt-get install -y --no-install-recommends \
+        mysql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN ln -s /usr/bin/nodejs /usr/bin/node
+
+RUN apt-get update \
+	&& apt-get -y install openssh-server
+
+RUN apt-get update && apt-get install -y -q git
+
+# Install rbenv
+RUN git clone https://github.com/sstephenson/rbenv.git /usr/local/rbenv
+RUN echo '# rbenv setup' > /etc/profile.d/rbenv.sh
+RUN echo 'export RBENV_ROOT=/usr/local/rbenv' >> /etc/profile.d/rbenv.sh
+RUN echo 'export PATH="$RBENV_ROOT/bin:$PATH"' >> /etc/profile.d/rbenv.sh
+RUN echo 'eval "$(rbenv init -)"' >> /etc/profile.d/rbenv.sh
+RUN chmod +x /etc/profile.d/rbenv.sh
+
+# install ruby-build
+RUN mkdir /usr/local/rbenv/plugins
+RUN git clone https://github.com/sstephenson/ruby-build.git /usr/local/rbenv/plugins/ruby-build
+
+ENV RBENV_ROOT /usr/local/rbenv
+ENV PATH $RBENV_ROOT/bin:$RBENV_ROOT/shims:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+RUN rbenv install 2.3.1 \
+	&& rbenv local 2.3.1 \
+	&& gem install passenger bundler
+
+RUN apt-get update \
+	&& apt-get install -y libcurl4-openssl-dev libxml2-dev libmysqlclient-dev 
+
+RUN mkdir temp \
+	&& cd temp \
+	&& wget -O - http://nginx.org/download/nginx-1.10.1.tar.gz | tar -xzvf - 
+
+RUN passenger-install-nginx-module \
+	--prefix=/opt/nginx \
+	--nginx-source-dir=/temp/nginx-1.10.1 
+
+RUN useradd -M -r -s /bin/false -G users whocares \
+	&& mkdir -p /var/log/nginx \
+	&& touch /var/log/nginx/error.log \
+	&& chown -R whocares:users /var/log/nginx
+
+COPY ./nginx.conf /opt/nginx/conf/
+
+
+WORKDIR /usr/src/app
+

@@ -1,0 +1,25 @@
+version: '2.1'
+services:
+  web_graeters:
+    container_name: web_graeters
+    image: graeters:latest
+    volumes:
+      - "c:/Users/banerjia/Documents/Docker/volumes/graeters:/usr/src/app"
+    command: bash -c "apt-get update && apt-get -y upgrade && bundle install && /opt/nginx/sbin/nginx -c /opt/nginx/conf/nginx.conf -g 'daemon off; error_log  /var/log/nginx/error.log;'"
+    links:
+      - "db_mysql:db"
+      - "nosql_es:es"
+    ports:
+      - "8000:80"
+  db_mysql:
+    container_name: db_mysql
+    image: mysql:5.6
+    environment:
+      - "MYSQL_ALLOW_EMPTY_PASSWORD=yes"
+    volumes:
+      - "c:/Users/banerjia/Documents/Docker/volumes/mysql:/var/lib/mysql"
+  nosql_es:
+    container_name: nosql_es
+    image: elasticsearch:2.4.6
+    volumes:
+      - "c:/Users/banerjia/Documents/Docker/volumes/esdata:/usr/share/elasticsearch/data"

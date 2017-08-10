@@ -1,0 +1,24 @@
+version: '2.1'
+services:
+  billing_web:
+    container_name: billing_web
+    image: banerjia/django_psql_web_server:latest
+    environment:
+      - "BILLING_DB_USER=postgres"
+    volumes:
+      - "c:/Users/banerjia/Documents/Docker/volumes/tagoretown_cloud_apps:/usr/src/app"
+    links:
+      - "billing_db:db"
+    ports:
+      - "8000:8000"
+  billing_db:
+    container_name: billing_db
+    image: postgres:latest
+    environment:
+      - "POSTGRES_PASSWORD="
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+volumes:
+  pgdata:
